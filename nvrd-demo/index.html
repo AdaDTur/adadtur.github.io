@@ -1,0 +1,1070 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NVRD Dataset Explorer</title>
+<script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+<style>
+:root {
+  --bg: #fafafa;
+  --card: #fff;
+  --border: #e0e0e0;
+  --text: #333;
+  --text-light: #666;
+  --accent: #2563eb;
+  --accent-light: #dbeafe;
+  --radius: 8px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; }
+.container { max-width: 1320px; margin: 0 auto; padding: 16px 24px; }
+
+/* Header */
+header { background: #fff; border-bottom: 1px solid var(--border); padding: 20px 0 0; }
+header .container { padding-bottom: 0; }
+h1 { font-size: 1.5rem; font-weight: 700; }
+.subtitle { color: var(--text-light); font-size: 0.9rem; margin-top: 2px; }
+
+/* Tabs */
+.tabs { display: flex; gap: 0; margin-top: 16px; border-bottom: none; }
+.tab { padding: 8px 18px; cursor: pointer; font-size: 0.85rem; font-weight: 500; color: var(--text-light); border-bottom: 2px solid transparent; transition: all 0.15s; user-select: none; }
+.tab:hover { color: var(--accent); background: var(--accent-light); }
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* Views */
+.view { display: none; }
+.view.active { display: block; }
+
+/* Cards */
+.card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 20px; margin-bottom: 16px; }
+.card h3 { font-size: 0.95rem; font-weight: 600; margin-bottom: 10px; }
+
+/* Controls row */
+.controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 16px; }
+.controls label { font-size: 0.8rem; font-weight: 500; color: var(--text-light); }
+.controls select, .controls input { font-size: 0.82rem; padding: 5px 10px; border: 1px solid var(--border); border-radius: 5px; background: #fff; min-width: 130px; }
+.control-group { display: flex; flex-direction: column; gap: 3px; }
+
+/* Nav buttons */
+.nav-row { display: flex; gap: 8px; align-items: center; }
+.btn { padding: 5px 14px; font-size: 0.82rem; border: 1px solid var(--border); border-radius: 5px; background: #fff; cursor: pointer; font-weight: 500; transition: background 0.15s; }
+.btn:hover { background: var(--accent-light); }
+.btn.accent { background: var(--accent); color: #fff; border-color: var(--accent); }
+.btn.accent:hover { background: #1d4ed8; }
+.item-counter { font-size: 0.82rem; color: var(--text-light); min-width: 80px; text-align: center; }
+
+/* Image pair */
+.image-pair { display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap; }
+.image-box { flex: 1; min-width: 200px; max-width: 400px; text-align: center; }
+.image-box img { width: 100%; border-radius: 6px; border: 1px solid var(--border); background: #f5f5f5; }
+.image-box .label { font-size: 0.75rem; font-weight: 600; color: var(--text-light); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* Metadata pills */
+.meta-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+.pill { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; background: #f0f4ff; border-radius: 12px; font-size: 0.75rem; font-weight: 500; }
+.pill .pill-label { color: var(--text-light); }
+.pill .pill-value { color: var(--accent); font-weight: 600; }
+
+/* Stats grid */
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin: 12px 0; }
+.stat-card { padding: 10px 14px; border-radius: 6px; border-left: 3px solid var(--accent); background: #f8fafc; }
+.stat-card .stat-label { font-size: 0.7rem; color: var(--text-light); font-weight: 500; text-transform: uppercase; letter-spacing: 0.3px; }
+.stat-card .stat-value { font-size: 1.15rem; font-weight: 700; margin-top: 2px; }
+
+/* Model colors */
+.mc-gemini { border-left-color: #ea4335; }
+.mc-gpt { border-left-color: #10a37f; }
+.mc-idefics { border-left-color: #9467bd; }
+.mc-molmo { border-left-color: #1f77b4; }
+.mc-qwen { border-left-color: #ff7f0e; }
+
+/* Model toggles */
+.model-toggles { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+.model-toggle { display: inline-flex; align-items: center; gap: 5px; padding: 4px 12px; border: 1px solid var(--border); border-radius: 16px; font-size: 0.78rem; cursor: pointer; user-select: none; transition: all 0.15s; }
+.model-toggle .dot { width: 8px; height: 8px; border-radius: 50%; }
+.model-toggle.active { background: var(--accent-light); border-color: var(--accent); }
+
+/* Rating bars */
+.rating-bars { display: flex; flex-direction: column; gap: 6px; }
+.rating-bar-row { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; }
+.rating-bar-row .bar-label { min-width: 110px; font-weight: 500; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rating-bar-row .bar-container { flex: 1; height: 22px; background: #f0f0f0; border-radius: 4px; position: relative; overflow: hidden; }
+.rating-bar-row .bar-fill { height: 100%; border-radius: 4px; transition: width 0.3s; display: flex; align-items: center; justify-content: flex-end; padding-right: 6px; }
+.rating-bar-row .bar-fill span { font-size: 0.72rem; font-weight: 600; color: #fff; text-shadow: 0 1px 1px rgba(0,0,0,0.3); }
+
+/* Two-column layout */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 900px) { .two-col { grid-template-columns: 1fr; } }
+
+/* Chart containers */
+.chart-container { width: 100%; min-height: 350px; }
+
+/* Likert scale visual */
+.likert-strip { display: flex; gap: 2px; height: 28px; border-radius: 4px; overflow: hidden; }
+.likert-seg { display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 600; color: #fff; min-width: 0; transition: flex 0.3s; }
+
+/* Table styles for aggregate view */
+table.data-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+table.data-table th { text-align: left; padding: 8px 10px; border-bottom: 2px solid var(--border); font-weight: 600; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.3px; color: var(--text-light); }
+table.data-table td { padding: 7px 10px; border-bottom: 1px solid #f0f0f0; }
+table.data-table tr:hover { background: #f8fafc; }
+table.data-table tr { cursor: pointer; }
+
+.sort-arrow { font-size: 0.7rem; margin-left: 3px; }
+
+/* Footer */
+footer { text-align: center; padding: 24px; color: var(--text-light); font-size: 0.78rem; border-top: 1px solid var(--border); margin-top: 32px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="container">
+    <h1>NVRD Dataset Explorer</h1>
+    <p class="subtitle">Novel Visual Recognition Dataset &mdash; Human vs. Model Ratings on Visual Perturbations</p>
+    <div class="tabs">
+      <div class="tab active" data-tab="explorer">Item Explorer</div>
+      <div class="tab" data-tab="table">Data Table</div>
+      <div class="tab" data-tab="scatter">Model vs. Human</div>
+      <div class="tab" data-tab="byLevel">Rating &times; Level</div>
+      <div class="tab" data-tab="distribution">Rating Distribution</div>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+
+<!-- TAB 1: ITEM EXPLORER -->
+<div class="view active" id="view-explorer">
+
+  <div class="card">
+    <div class="controls">
+      <div class="control-group">
+        <label>Category</label>
+        <select id="filter-category"><option value="">All</option></select>
+      </div>
+      <div class="control-group">
+        <label>Object</label>
+        <select id="filter-object"><option value="">All</option></select>
+      </div>
+      <div class="control-group">
+        <label>Perturbation</label>
+        <select id="filter-ptype"><option value="">All</option></select>
+      </div>
+      <div class="control-group">
+        <label>Level</label>
+        <select id="filter-level"><option value="">All</option></select>
+      </div>
+      <div class="control-group">
+        <label>Sort by</label>
+        <select id="sort-by">
+          <option value="trial_id">Trial ID</option>
+          <option value="human_mean_desc">Human Mean (high first)</option>
+          <option value="human_mean_asc">Human Mean (low first)</option>
+          <option value="level_asc">Level (low first)</option>
+          <option value="level_desc">Level (high first)</option>
+          <option value="object">Object A-Z</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="nav-row">
+      <button class="btn" id="btn-prev">&larr; Prev</button>
+      <span class="item-counter" id="item-counter">1 / 800</span>
+      <button class="btn" id="btn-next">Next &rarr;</button>
+      <span style="flex:1"></span>
+      <span style="font-size:0.8rem;color:var(--text-light)" id="filtered-count"></span>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <!-- Left: Images -->
+    <div class="card">
+      <div class="image-pair">
+        <div class="image-box">
+          <div class="label">Original</div>
+          <img id="img-base" src="" alt="Base image" loading="lazy">
+        </div>
+        <div class="image-box">
+          <div class="label">Perturbed</div>
+          <img id="img-pert" src="" alt="Perturbed image" loading="lazy">
+        </div>
+      </div>
+      <div class="meta-row" id="meta-row"></div>
+    </div>
+
+    <!-- Right: Ratings -->
+    <div>
+      <div class="card">
+        <h3>Ratings Comparison</h3>
+        <div class="stats-grid" id="stats-grid"></div>
+        <div style="margin-top:12px">
+          <div style="font-size:0.75rem;font-weight:600;color:var(--text-light);margin-bottom:6px;">HUMAN RATING DISTRIBUTION</div>
+          <div class="likert-strip" id="likert-strip"></div>
+          <div style="display:flex;justify-content:space-between;font-size:0.65rem;color:var(--text-light);margin-top:3px">
+            <span>1 (Strongly Disagree)</span><span>7 (Strongly Agree)</span>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>All Ratings (Bar Chart)</h3>
+        <div class="rating-bars" id="rating-bars"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Human Rating Distribution for This Item</h3>
+    <div class="chart-container" id="chart-item-dist"></div>
+  </div>
+</div>
+
+<!-- TAB 2: DATA TABLE -->
+<div class="view" id="view-table">
+  <div class="card">
+    <div class="controls">
+      <div class="control-group">
+        <label>Category</label>
+        <select id="tbl-filter-category"><option value="">All</option></select>
+      </div>
+      <div class="control-group">
+        <label>Object</label>
+        <select id="tbl-filter-object"><option value="">All</option></select>
+      </div>
+      <div class="control-group">
+        <label>Perturbation</label>
+        <select id="tbl-filter-ptype"><option value="">All</option></select>
+      </div>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="data-table" id="data-table">
+        <thead><tr>
+          <th data-sort="object">Object <span class="sort-arrow"></span></th>
+          <th data-sort="category">Category</th>
+          <th data-sort="perturbation_type">Perturbation</th>
+          <th data-sort="level">Level</th>
+          <th data-sort="human_mean">Human Mean</th>
+          <th data-sort="gemini">Gemini</th>
+          <th data-sort="gpt">GPT-4o</th>
+          <th data-sort="idefics">IDEFICS3</th>
+          <th data-sort="molmo">Molmo2</th>
+          <th data-sort="qwen">Qwen2-VL</th>
+        </tr></thead>
+        <tbody id="table-body"></tbody>
+      </table>
+    </div>
+    <div class="nav-row" style="margin-top:12px;justify-content:center">
+      <button class="btn" id="tbl-prev">&larr; Prev</button>
+      <span class="item-counter" id="tbl-counter">Page 1</span>
+      <button class="btn" id="tbl-next">Next &rarr;</button>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 3: MODEL VS HUMAN SCATTER -->
+<div class="view" id="view-scatter">
+  <div class="card">
+    <div class="controls">
+      <div class="control-group">
+        <label>Model</label>
+        <select id="scatter-model"></select>
+      </div>
+      <div class="control-group">
+        <label>Color by</label>
+        <select id="scatter-color">
+          <option value="category">Category</option>
+          <option value="perturbation_type">Perturbation Type</option>
+          <option value="level">Level</option>
+        </select>
+      </div>
+    </div>
+    <div class="chart-container" id="chart-scatter" style="min-height:500px"></div>
+  </div>
+  <div class="card">
+    <h3>All Models vs. Human (Jittered)</h3>
+    <div class="chart-container" id="chart-scatter-all" style="min-height:500px"></div>
+  </div>
+</div>
+
+<!-- TAB 4: RATING x LEVEL -->
+<div class="view" id="view-byLevel">
+  <div class="card">
+    <div class="controls">
+      <div class="control-group">
+        <label>Category</label>
+        <select id="level-category"><option value="">All</option></select>
+      </div>
+      <div class="control-group">
+        <label>Perturbation</label>
+        <select id="level-ptype"><option value="">All</option></select>
+      </div>
+    </div>
+    <h3>Mean Rating by Perturbation Level</h3>
+    <div class="chart-container" id="chart-by-level" style="min-height:450px"></div>
+  </div>
+  <div class="card">
+    <h3>Per-Object Rating Curves</h3>
+    <div class="controls">
+      <div class="control-group">
+        <label>Perturbation</label>
+        <select id="obj-level-ptype"></select>
+      </div>
+    </div>
+    <div class="chart-container" id="chart-obj-level" style="min-height:450px"></div>
+  </div>
+</div>
+
+<!-- TAB 5: RATING DISTRIBUTION -->
+<div class="view" id="view-distribution">
+  <div class="card">
+    <h3>Overall Rating Distribution (Human vs. Models)</h3>
+    <div class="chart-container" id="chart-overall-dist" style="min-height:450px"></div>
+  </div>
+  <div class="card">
+    <h3>Rating Distribution by Category</h3>
+    <div class="chart-container" id="chart-cat-dist" style="min-height:450px"></div>
+  </div>
+  <div class="card">
+    <h3>Rating Distribution by Perturbation Type</h3>
+    <div class="chart-container" id="chart-ptype-dist" style="min-height:450px"></div>
+  </div>
+</div>
+
+</div><!-- .container -->
+
+<footer>NVRD Dataset Explorer &middot; Human sample (800 trials, 18 objects, 7 perturbation types)</footer>
+
+<script>
+/* ================================================================
+   GLOBALS
+   ================================================================ */
+let DATA = null;
+let filteredItems = [];
+let currentIdx = 0;
+let tablePage = 0;
+const TABLE_PAGE_SIZE = 50;
+let tableSortCol = null;
+let tableSortAsc = true;
+
+const MODEL_COLORS = {
+  'gemini-2.5-flash': '#ea4335',
+  'gpt-4o-mini':      '#10a37f',
+  'idefics3-8b':      '#9467bd',
+  'molmo2-8b':        '#1f77b4',
+  'qwen2-vl-7b':      '#ff7f0e',
+};
+const MODEL_SHORT = {
+  'gemini-2.5-flash': 'Gemini 2.5 Flash',
+  'gpt-4o-mini':      'GPT-4o Mini',
+  'idefics3-8b':      'IDEFICS3-8B',
+  'molmo2-8b':        'Molmo2-8B',
+  'qwen2-vl-7b':      'Qwen2-VL-7B',
+};
+const MODEL_CSS = {
+  'gemini-2.5-flash': 'mc-gemini',
+  'gpt-4o-mini':      'mc-gpt',
+  'idefics3-8b':      'mc-idefics',
+  'molmo2-8b':        'mc-molmo',
+  'qwen2-vl-7b':      'mc-qwen',
+};
+const HUMAN_COLOR = '#e11d48';
+const LIKERT_COLORS = ['#dc2626','#ea580c','#f59e0b','#a3a3a3','#22c55e','#16a34a','#15803d'];
+const CATEGORY_COLORS = {
+  'known': '#2563eb',
+  'novel': '#9333ea',
+  'modified/shape-shape': '#ea580c',
+  'modified/shape-texture': '#0891b2',
+};
+const PTYPE_COLORS = {
+  add:'#ef4444', background:'#f59e0b', color:'#22c55e',
+  remove:'#3b82f6', shape:'#8b5cf6', style:'#ec4899', texture:'#14b8a6',
+};
+
+/* ================================================================
+   INIT
+   ================================================================ */
+fetch('data.json')
+  .then(r => r.json())
+  .then(d => { DATA = d; init(); });
+
+function init() {
+  setupTabs();
+  populateFilters();
+  applyFilters();
+  setupTableFilters();
+
+  // Explorer filter listeners
+  ['filter-category','filter-object','filter-ptype','filter-level','sort-by'].forEach(id => {
+    document.getElementById(id).addEventListener('change', () => {
+      applyFilters();
+      renderItem();
+    });
+  });
+  document.getElementById('btn-prev').addEventListener('click', () => navigate(-1));
+  document.getElementById('btn-next').addEventListener('click', () => navigate(1));
+
+  // Keyboard nav
+  document.addEventListener('keydown', e => {
+    if (e.target.tagName === 'SELECT' || e.target.tagName === 'INPUT') return;
+    if (e.key === 'ArrowLeft')  navigate(-1);
+    if (e.key === 'ArrowRight') navigate(1);
+  });
+
+  // Scatter listeners
+  document.getElementById('scatter-model').addEventListener('change', renderScatter);
+  document.getElementById('scatter-color').addEventListener('change', renderScatter);
+
+  // Level listeners
+  ['level-category','level-ptype'].forEach(id => {
+    document.getElementById(id).addEventListener('change', renderByLevel);
+  });
+  document.getElementById('obj-level-ptype').addEventListener('change', renderObjLevel);
+
+  // Table listeners
+  ['tbl-filter-category','tbl-filter-object','tbl-filter-ptype'].forEach(id => {
+    document.getElementById(id).addEventListener('change', () => { tablePage = 0; renderTable(); });
+  });
+  document.getElementById('tbl-prev').addEventListener('click', () => {
+    tablePage = Math.max(0, tablePage - 1); renderTable();
+  });
+  document.getElementById('tbl-next').addEventListener('click', () => {
+    tablePage++; renderTable();
+  });
+  document.querySelectorAll('#data-table th[data-sort]').forEach(th => {
+    th.style.cursor = 'pointer';
+    th.addEventListener('click', () => {
+      const col = th.dataset.sort;
+      if (tableSortCol === col) tableSortAsc = !tableSortAsc;
+      else { tableSortCol = col; tableSortAsc = true; }
+      tablePage = 0;
+      renderTable();
+    });
+  });
+
+  renderItem();
+}
+
+/* ================================================================
+   TABS
+   ================================================================ */
+function setupTabs() {
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById('view-' + tab.dataset.tab).classList.add('active');
+      // Lazy-render expensive charts
+      const t = tab.dataset.tab;
+      if (t === 'scatter')       { renderScatter(); renderScatterAll(); }
+      if (t === 'byLevel')       { renderByLevel(); renderObjLevel(); }
+      if (t === 'distribution')  renderDistributions();
+      if (t === 'table')         renderTable();
+    });
+  });
+}
+
+/* ================================================================
+   FILTERS
+   ================================================================ */
+function populateFilters() {
+  const m = DATA.metadata;
+  populateSelect('filter-category', m.categories);
+  populateSelect('filter-object', m.objects);
+  populateSelect('filter-ptype', m.perturbation_types);
+  populateSelect('filter-level', m.levels);
+  populateSelect('tbl-filter-category', m.categories);
+  populateSelect('tbl-filter-object', m.objects);
+  populateSelect('tbl-filter-ptype', m.perturbation_types);
+  populateSelect('level-category', m.categories);
+  populateSelect('level-ptype', m.perturbation_types);
+
+  // Scatter model select
+  const sel = document.getElementById('scatter-model');
+  m.models.forEach(mod => {
+    const o = document.createElement('option');
+    o.value = mod;
+    o.textContent = MODEL_SHORT[mod];
+    sel.appendChild(o);
+  });
+
+  // Per-object level ptype
+  const sel2 = document.getElementById('obj-level-ptype');
+  m.perturbation_types.forEach(pt => {
+    const o = document.createElement('option');
+    o.value = pt;
+    o.textContent = pt;
+    sel2.appendChild(o);
+  });
+}
+
+function populateSelect(id, values) {
+  const sel = document.getElementById(id);
+  values.forEach(v => {
+    const o = document.createElement('option');
+    o.value = v;
+    o.textContent = v;
+    sel.appendChild(o);
+  });
+}
+
+function setupTableFilters() { /* listeners already added in init */ }
+
+function applyFilters() {
+  const cat  = document.getElementById('filter-category').value;
+  const obj  = document.getElementById('filter-object').value;
+  const pt   = document.getElementById('filter-ptype').value;
+  const lvl  = document.getElementById('filter-level').value;
+  const sort = document.getElementById('sort-by').value;
+
+  filteredItems = DATA.items.filter(i =>
+    (!cat || i.category === cat) &&
+    (!obj || i.object === obj) &&
+    (!pt  || i.perturbation_type === pt) &&
+    (!lvl || i.level === +lvl)
+  );
+
+  const sorters = {
+    trial_id:        (a, b) => a.trial_id - b.trial_id,
+    human_mean_desc: (a, b) => (b.human_mean || 0) - (a.human_mean || 0),
+    human_mean_asc:  (a, b) => (a.human_mean || 0) - (b.human_mean || 0),
+    level_asc:       (a, b) => a.level - b.level || a.object.localeCompare(b.object),
+    level_desc:      (a, b) => b.level - a.level || a.object.localeCompare(b.object),
+    object:          (a, b) => a.object.localeCompare(b.object) || a.level - b.level,
+  };
+  if (sorters[sort]) filteredItems.sort(sorters[sort]);
+
+  currentIdx = 0;
+  document.getElementById('filtered-count').textContent = filteredItems.length + ' trials';
+}
+
+function navigate(delta) {
+  if (!filteredItems.length) return;
+  currentIdx = (currentIdx + delta + filteredItems.length) % filteredItems.length;
+  renderItem();
+}
+
+/* ================================================================
+   ITEM EXPLORER
+   ================================================================ */
+function renderItem() {
+  if (!filteredItems.length) {
+    document.getElementById('item-counter').textContent = '0 / 0';
+    return;
+  }
+  const item = filteredItems[currentIdx];
+  document.getElementById('item-counter').textContent =
+    (currentIdx + 1) + ' / ' + filteredItems.length;
+
+  // Images
+  document.getElementById('img-base').src = item.base_image;
+  document.getElementById('img-pert').src = item.perturbed_image;
+
+  // Metadata pills
+  document.getElementById('meta-row').innerHTML = [
+    pill('Object', item.object),
+    pill('Novel Word', '"' + item.novel_word + '"'),
+    pill('Category', item.category),
+    pill('Perturbation', item.perturbation_type),
+    pill('Level', item.level),
+    pill('Trial ID', item.trial_id),
+  ].join('');
+
+  // Stats grid
+  let statsHtml = '';
+  statsHtml += statCard('Human Mean', item.human_mean, HUMAN_COLOR);
+  statsHtml += statCard('Human Median', item.human_median, HUMAN_COLOR);
+  for (const model of DATA.metadata.models) {
+    const r = item.model_ratings[model];
+    statsHtml += '<div class="stat-card ' + MODEL_CSS[model] + '">'
+      + '<div class="stat-label">' + MODEL_SHORT[model] + '</div>'
+      + '<div class="stat-value">' + (r != null ? r : '&mdash;') + '</div></div>';
+  }
+  document.getElementById('stats-grid').innerHTML = statsHtml;
+
+  // Likert strip
+  renderLikertStrip(item.human_ratings);
+
+  // Rating bars
+  renderRatingBars(item);
+
+  // Item distribution chart
+  renderItemDistChart(item);
+}
+
+function pill(label, value) {
+  return '<span class="pill"><span class="pill-label">' + label
+    + ':</span><span class="pill-value">' + value + '</span></span>';
+}
+
+function statCard(label, value, color) {
+  return '<div class="stat-card" style="border-left-color:' + color + '">'
+    + '<div class="stat-label">' + label + '</div>'
+    + '<div class="stat-value">' + (value != null ? value : '&mdash;') + '</div></div>';
+}
+
+function renderLikertStrip(ratings) {
+  const strip = document.getElementById('likert-strip');
+  if (!ratings.length) {
+    strip.innerHTML = '<div style="font-size:0.8rem;color:var(--text-light)">No human data</div>';
+    return;
+  }
+  const counts = Array(7).fill(0);
+  ratings.forEach(r => counts[r - 1]++);
+  strip.innerHTML = counts.map((c, i) =>
+    '<div class="likert-seg" style="flex:' + (c || 0.15)
+    + ';background:' + LIKERT_COLORS[i] + '">' + (c ? c : '') + '</div>'
+  ).join('');
+}
+
+function renderRatingBars(item) {
+  const container = document.getElementById('rating-bars');
+  const maxR = 7;
+  let html = '';
+  if (item.human_mean != null) {
+    html += barRow('Human (mean)', item.human_mean, maxR, HUMAN_COLOR);
+  }
+  for (const model of DATA.metadata.models) {
+    const r = item.model_ratings[model];
+    if (r != null) html += barRow(MODEL_SHORT[model], r, maxR, MODEL_COLORS[model]);
+  }
+  container.innerHTML = html;
+}
+
+function barRow(label, value, max, color) {
+  const pct = (value / max) * 100;
+  return '<div class="rating-bar-row">'
+    + '<div class="bar-label">' + label + '</div>'
+    + '<div class="bar-container"><div class="bar-fill" style="width:'
+    + pct + '%;background:' + color + '"><span>' + value + '</span></div></div></div>';
+}
+
+function renderItemDistChart(item) {
+  const ratings = item.human_ratings;
+  if (!ratings.length) { Plotly.purge('chart-item-dist'); return; }
+
+  const counts = Array(7).fill(0);
+  ratings.forEach(r => counts[r - 1]++);
+
+  const traces = [{
+    x: [1,2,3,4,5,6,7],
+    y: counts,
+    type: 'bar',
+    marker: { color: LIKERT_COLORS },
+    name: 'Human',
+    text: counts.map(c => c > 0 ? String(c) : ''),
+    textposition: 'outside',
+  }];
+
+  // Model ratings as dashed vertical lines
+  const shapes = [];
+  const annotations = [];
+  const modelEntries = Object.entries(item.model_ratings);
+  const peakY = Math.max(...counts);
+  modelEntries.forEach(([model, rating], idx) => {
+    shapes.push({
+      type: 'line', x0: rating, x1: rating,
+      y0: 0, y1: peakY * 1.1,
+      line: { color: MODEL_COLORS[model], width: 2, dash: 'dash' },
+    });
+    annotations.push({
+      x: rating, y: peakY * (1.15 + idx * 0.08),
+      text: MODEL_SHORT[model],
+      showarrow: false,
+      font: { size: 9, color: MODEL_COLORS[model] },
+      textangle: -30,
+    });
+  });
+
+  Plotly.newPlot('chart-item-dist', traces, {
+    xaxis: { title: 'Rating', tickvals: [1,2,3,4,5,6,7], dtick: 1 },
+    yaxis: { title: 'Count' },
+    shapes: shapes,
+    annotations: annotations,
+    margin: { t: 40, r: 20, b: 50, l: 50 },
+    height: 300,
+  }, { responsive: true });
+}
+
+/* ================================================================
+   DATA TABLE
+   ================================================================ */
+function getTableItems() {
+  const cat = document.getElementById('tbl-filter-category').value;
+  const obj = document.getElementById('tbl-filter-object').value;
+  const pt  = document.getElementById('tbl-filter-ptype').value;
+
+  let items = DATA.items.filter(i =>
+    (!cat || i.category === cat) &&
+    (!obj || i.object === obj) &&
+    (!pt  || i.perturbation_type === pt)
+  );
+
+  if (tableSortCol) {
+    const getVal = item => {
+      switch (tableSortCol) {
+        case 'object':            return item.object;
+        case 'category':          return item.category;
+        case 'perturbation_type': return item.perturbation_type;
+        case 'level':             return item.level;
+        case 'human_mean':        return item.human_mean || 0;
+        case 'gemini':            return item.model_ratings['gemini-2.5-flash'] ?? -1;
+        case 'gpt':               return item.model_ratings['gpt-4o-mini'] ?? -1;
+        case 'idefics':           return item.model_ratings['idefics3-8b'] ?? -1;
+        case 'molmo':             return item.model_ratings['molmo2-8b'] ?? -1;
+        case 'qwen':              return item.model_ratings['qwen2-vl-7b'] ?? -1;
+        default:                  return 0;
+      }
+    };
+    items.sort((a, b) => {
+      const va = getVal(a), vb = getVal(b);
+      if (typeof va === 'string')
+        return tableSortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
+      return tableSortAsc ? va - vb : vb - va;
+    });
+  }
+  return items;
+}
+
+function renderTable() {
+  const items = getTableItems();
+  const maxPage = Math.max(0, Math.ceil(items.length / TABLE_PAGE_SIZE) - 1);
+  if (tablePage > maxPage) tablePage = maxPage;
+  const start = tablePage * TABLE_PAGE_SIZE;
+  const page = items.slice(start, start + TABLE_PAGE_SIZE);
+
+  const tbody = document.getElementById('table-body');
+  tbody.innerHTML = page.map(item => {
+    const mr = item.model_ratings;
+    return '<tr data-trial="' + item.trial_id + '">'
+      + '<td><strong>' + item.object + '</strong></td>'
+      + '<td>' + item.category + '</td>'
+      + '<td>' + item.perturbation_type + '</td>'
+      + '<td>' + item.level + '</td>'
+      + td(item.human_mean, HUMAN_COLOR)
+      + td(mr['gemini-2.5-flash'], MODEL_COLORS['gemini-2.5-flash'])
+      + td(mr['gpt-4o-mini'], MODEL_COLORS['gpt-4o-mini'])
+      + td(mr['idefics3-8b'], MODEL_COLORS['idefics3-8b'])
+      + td(mr['molmo2-8b'], MODEL_COLORS['molmo2-8b'])
+      + td(mr['qwen2-vl-7b'], MODEL_COLORS['qwen2-vl-7b'])
+      + '</tr>';
+  }).join('');
+
+  document.getElementById('tbl-counter').textContent =
+    'Page ' + (tablePage + 1) + ' / ' + (maxPage + 1) + '  (' + items.length + ' items)';
+
+  // Click row -> jump to explorer
+  tbody.querySelectorAll('tr').forEach(tr => {
+    tr.addEventListener('click', () => {
+      const tid = +tr.dataset.trial;
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      document.querySelector('[data-tab="explorer"]').classList.add('active');
+      document.getElementById('view-explorer').classList.add('active');
+      ['filter-category','filter-object','filter-ptype','filter-level'].forEach(id =>
+        document.getElementById(id).value = '');
+      applyFilters();
+      const idx = filteredItems.findIndex(i => i.trial_id === tid);
+      if (idx >= 0) { currentIdx = idx; renderItem(); }
+    });
+  });
+
+  // Sort arrows
+  document.querySelectorAll('#data-table th[data-sort]').forEach(th => {
+    const arrow = th.querySelector('.sort-arrow');
+    arrow.textContent = th.dataset.sort === tableSortCol ? (tableSortAsc ? ' ▲' : ' ▼') : '';
+  });
+}
+
+function td(val, color) {
+  return '<td style="color:' + color + ';font-weight:600">'
+    + (val != null ? val : '&mdash;') + '</td>';
+}
+
+/* ================================================================
+   SCATTER: MODEL VS HUMAN
+   ================================================================ */
+function renderScatter() {
+  const model   = document.getElementById('scatter-model').value;
+  const colorBy = document.getElementById('scatter-color').value;
+
+  const items = DATA.items.filter(i =>
+    i.human_mean != null && i.model_ratings[model] != null);
+
+  // Group by color dimension
+  const groups = {};
+  items.forEach(i => {
+    const key = colorBy === 'level' ? ('Level ' + i[colorBy]) : i[colorBy];
+    if (!groups[key]) groups[key] = { x: [], y: [], text: [] };
+    groups[key].x.push(i.human_mean);
+    groups[key].y.push(i.model_ratings[model]);
+    groups[key].text.push(i.object + ' / ' + i.perturbation_type + ' L' + i.level);
+  });
+
+  const colorMap = colorBy === 'category' ? CATEGORY_COLORS
+    : colorBy === 'perturbation_type' ? PTYPE_COLORS : null;
+
+  const traces = Object.entries(groups).map(([key, g]) => ({
+    x: g.x, y: g.y, text: g.text,
+    mode: 'markers', type: 'scatter', name: key,
+    marker: {
+      size: 7, opacity: 0.7,
+      color: colorMap ? colorMap[key.replace('Level ', '')] : undefined,
+    },
+    hovertemplate: '%{text}<br>Human: %{x}<br>Model: %{y}<extra></extra>',
+  }));
+
+  // Diagonal
+  traces.push({
+    x: [1, 7], y: [1, 7], mode: 'lines', name: 'y = x',
+    line: { color: '#ccc', dash: 'dash', width: 1 }, showlegend: false,
+  });
+
+  const xs = items.map(i => i.human_mean);
+  const ys = items.map(i => i.model_ratings[model]);
+  const corr = pearsonCorr(xs, ys);
+
+  Plotly.newPlot('chart-scatter', traces, {
+    xaxis: { title: 'Human Mean Rating', range: [0.5, 7.5] },
+    yaxis: { title: MODEL_SHORT[model] + ' Rating', range: [0.5, 7.5] },
+    title: {
+      text: MODEL_SHORT[model] + ' vs. Human  (r = ' + corr.toFixed(3)
+        + ', n = ' + items.length + ')',
+      font: { size: 14 },
+    },
+    margin: { t: 50, r: 20, b: 50, l: 60 },
+    legend: { orientation: 'h', y: -0.18 },
+    height: 500,
+  }, { responsive: true });
+}
+
+function renderScatterAll() {
+  const traces = [];
+  for (const model of DATA.metadata.models) {
+    const items = DATA.items.filter(i =>
+      i.human_mean != null && i.model_ratings[model] != null);
+    const jitter = () => (Math.random() - 0.5) * 0.15;
+    traces.push({
+      x: items.map(i => i.human_mean + jitter()),
+      y: items.map(i => i.model_ratings[model] + jitter()),
+      text: items.map(i => i.object + ' / ' + i.perturbation_type + ' L' + i.level),
+      mode: 'markers', type: 'scatter',
+      name: MODEL_SHORT[model],
+      marker: { size: 5, opacity: 0.5, color: MODEL_COLORS[model] },
+      hovertemplate: MODEL_SHORT[model]
+        + '<br>%{text}<br>Human: %{x:.1f}<br>Model: %{y}<extra></extra>',
+    });
+  }
+  traces.push({
+    x: [1, 7], y: [1, 7], mode: 'lines', name: 'y = x',
+    line: { color: '#ccc', dash: 'dash', width: 1 }, showlegend: false,
+  });
+
+  Plotly.newPlot('chart-scatter-all', traces, {
+    xaxis: { title: 'Human Mean Rating', range: [0.5, 7.5] },
+    yaxis: { title: 'Model Rating', range: [0.5, 7.5] },
+    margin: { t: 30, r: 20, b: 50, l: 60 },
+    legend: { orientation: 'h', y: -0.15 },
+    height: 500,
+  }, { responsive: true });
+}
+
+/* ================================================================
+   RATING x LEVEL
+   ================================================================ */
+function renderByLevel() {
+  const cat = document.getElementById('level-category').value;
+  const pt  = document.getElementById('level-ptype').value;
+
+  const items = DATA.items.filter(i =>
+    (!cat || i.category === cat) &&
+    (!pt  || i.perturbation_type === pt) &&
+    i.human_mean != null
+  );
+
+  const levels = DATA.metadata.levels;
+  const traces = [];
+
+  // Human
+  const humanByLevel = {};
+  levels.forEach(l => humanByLevel[l] = []);
+  items.forEach(i => { if (humanByLevel[i.level]) humanByLevel[i.level].push(i.human_mean); });
+  traces.push({
+    x: levels,
+    y: levels.map(l => mean(humanByLevel[l])),
+    mode: 'lines+markers', name: 'Human',
+    line: { color: HUMAN_COLOR, width: 3 },
+    marker: { size: 8 },
+  });
+
+  // Models
+  for (const model of DATA.metadata.models) {
+    const byLevel = {};
+    levels.forEach(l => byLevel[l] = []);
+    items.forEach(i => {
+      if (i.model_ratings[model] != null && byLevel[i.level])
+        byLevel[i.level].push(i.model_ratings[model]);
+    });
+    traces.push({
+      x: levels,
+      y: levels.map(l => mean(byLevel[l])),
+      mode: 'lines+markers', name: MODEL_SHORT[model],
+      line: { color: MODEL_COLORS[model], width: 2 },
+      marker: { size: 6 },
+    });
+  }
+
+  Plotly.newPlot('chart-by-level', traces, {
+    xaxis: { title: 'Perturbation Level', tickvals: levels },
+    yaxis: { title: 'Mean Rating', range: [1, 7] },
+    margin: { t: 30, r: 20, b: 50, l: 50 },
+    legend: { orientation: 'h', y: -0.18 },
+    height: 420,
+  }, { responsive: true });
+}
+
+function renderObjLevel() {
+  const pt = document.getElementById('obj-level-ptype').value;
+  const items = DATA.items.filter(i =>
+    i.perturbation_type === pt && i.human_mean != null);
+  const levels = DATA.metadata.levels;
+  const objects = [...new Set(items.map(i => i.object))].sort();
+
+  const traces = [];
+  for (const obj of objects) {
+    const objItems = items.filter(i => i.object === obj);
+    const byLevel = {};
+    objItems.forEach(i => byLevel[i.level] = i.human_mean);
+    const cat = objItems[0]?.category || 'known';
+    traces.push({
+      x: levels.filter(l => byLevel[l] != null),
+      y: levels.filter(l => byLevel[l] != null).map(l => byLevel[l]),
+      mode: 'lines+markers', name: obj,
+      line: { color: CATEGORY_COLORS[cat] || '#999', width: 1.5 },
+      marker: { size: 5 },
+      opacity: 0.7,
+    });
+  }
+
+  Plotly.newPlot('chart-obj-level', traces, {
+    xaxis: { title: 'Perturbation Level', tickvals: levels },
+    yaxis: { title: 'Human Mean Rating', range: [0.5, 7.5] },
+    title: { text: 'Human Ratings by Object \u2014 ' + pt, font: { size: 13 } },
+    margin: { t: 40, r: 20, b: 50, l: 50 },
+    legend: { orientation: 'v', x: 1.02, y: 1 },
+    height: 420,
+    showlegend: objects.length <= 20,
+  }, { responsive: true });
+}
+
+/* ================================================================
+   DISTRIBUTIONS
+   ================================================================ */
+function renderDistributions() {
+  const vals = [1,2,3,4,5,6,7];
+
+  // Overall
+  const humanCounts = Array(7).fill(0);
+  DATA.items.forEach(i => i.human_ratings.forEach(r => humanCounts[r - 1]++));
+  const humanTotal = humanCounts.reduce((a, b) => a + b, 0);
+
+  const traces = [{
+    x: vals,
+    y: humanCounts.map(c => c / humanTotal),
+    type: 'bar', name: 'Human',
+    marker: { color: HUMAN_COLOR }, opacity: 0.7,
+  }];
+
+  for (const model of DATA.metadata.models) {
+    const counts = Array(7).fill(0);
+    let total = 0;
+    DATA.items.forEach(i => {
+      const r = i.model_ratings[model];
+      if (r != null) { counts[r - 1]++; total++; }
+    });
+    traces.push({
+      x: vals,
+      y: counts.map(c => total ? c / total : 0),
+      type: 'bar', name: MODEL_SHORT[model],
+      marker: { color: MODEL_COLORS[model] }, opacity: 0.7,
+    });
+  }
+
+  Plotly.newPlot('chart-overall-dist', traces, {
+    barmode: 'group',
+    xaxis: { title: 'Rating', tickvals: vals, dtick: 1 },
+    yaxis: { title: 'Proportion' },
+    margin: { t: 30, r: 20, b: 50, l: 60 },
+    legend: { orientation: 'h', y: -0.18 },
+    height: 420,
+  }, { responsive: true });
+
+  // By category (box plots)
+  renderGroupedBox('chart-cat-dist', 'category', DATA.metadata.categories);
+
+  // By perturbation type
+  renderGroupedBox('chart-ptype-dist', 'perturbation_type', DATA.metadata.perturbation_types);
+}
+
+function renderGroupedBox(containerId, groupKey, groups) {
+  const traces = [];
+
+  // Human
+  traces.push({
+    y: groups.flatMap(g =>
+      DATA.items.filter(i => i[groupKey] === g && i.human_mean != null)
+        .map(i => i.human_mean)),
+    x: groups.flatMap(g =>
+      DATA.items.filter(i => i[groupKey] === g && i.human_mean != null)
+        .map(() => g)),
+    type: 'box', name: 'Human',
+    marker: { color: HUMAN_COLOR }, boxpoints: false,
+  });
+
+  for (const model of DATA.metadata.models) {
+    traces.push({
+      y: groups.flatMap(g =>
+        DATA.items.filter(i => i[groupKey] === g && i.model_ratings[model] != null)
+          .map(i => i.model_ratings[model])),
+      x: groups.flatMap(g =>
+        DATA.items.filter(i => i[groupKey] === g && i.model_ratings[model] != null)
+          .map(() => g)),
+      type: 'box', name: MODEL_SHORT[model],
+      marker: { color: MODEL_COLORS[model] }, boxpoints: false,
+    });
+  }
+
+  Plotly.newPlot(containerId, traces, {
+    boxmode: 'group',
+    yaxis: { title: 'Rating', range: [0.5, 7.5] },
+    margin: { t: 30, r: 20, b: 80, l: 50 },
+    legend: { orientation: 'h', y: -0.25 },
+    height: 420,
+  }, { responsive: true });
+}
+
+/* ================================================================
+   UTILS
+   ================================================================ */
+function mean(arr) {
+  if (!arr.length) return null;
+  return arr.reduce((a, b) => a + b, 0) / arr.length;
+}
+
+function pearsonCorr(xs, ys) {
+  const n = xs.length;
+  if (n < 2) return 0;
+  const mx = mean(xs), my = mean(ys);
+  let num = 0, dx2 = 0, dy2 = 0;
+  for (let i = 0; i < n; i++) {
+    const dx = xs[i] - mx, dy = ys[i] - my;
+    num += dx * dy;
+    dx2 += dx * dx;
+    dy2 += dy * dy;
+  }
+  return (dx2 && dy2) ? num / Math.sqrt(dx2 * dy2) : 0;
+}
+</script>
+</body>
+</html>
