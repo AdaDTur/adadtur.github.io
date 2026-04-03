@@ -113,6 +113,12 @@ table.data-table tr { cursor: pointer; }
 
 .sort-arrow { font-size: 0.7rem; margin-left: 3px; }
 
+/* Question banner */
+.question-banner { text-align: center; padding: 20px 24px; background: linear-gradient(135deg, #f0f4ff 0%, #faf5ff 100%); border: 1px solid #c7d2fe; }
+.question-text { font-size: 1.2rem; line-height: 1.6; color: var(--text); }
+.question-text .nonce { font-weight: 700; color: #7c3aed; font-style: italic; }
+.question-text .prompt-label { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-light); font-weight: 600; display: block; margin-bottom: 6px; }
+
 /* Footer */
 footer { text-align: center; padding: 24px; color: var(--text-light); font-size: 0.78rem; border-top: 1px solid var(--border); margin-top: 32px; }
 </style>
@@ -177,6 +183,11 @@ footer { text-align: center; padding: 24px; color: var(--text-light); font-size:
       <span style="flex:1"></span>
       <span style="font-size:0.8rem;color:var(--text-light)" id="filtered-count"></span>
     </div>
+  </div>
+
+  <!-- Central question prompt -->
+  <div class="card question-banner" id="question-banner">
+    <div class="question-text" id="question-text"></div>
   </div>
 
   <div class="two-col">
@@ -581,6 +592,13 @@ function renderItem() {
   const item = filteredItems[currentIdx];
   document.getElementById('item-counter').textContent =
     (currentIdx + 1) + ' / ' + filteredItems.length;
+
+  // Question banner
+  const w = item.novel_word;
+  document.getElementById('question-text').innerHTML =
+    '<span class="prompt-label">Task Prompt</span>'
+    + 'Let\'s call the object in the first image <span class="nonce">"' + w + '"</span>. '
+    + 'Would you also call the object in the second image <span class="nonce">"' + w + '"</span>?';
 
   // Images
   document.getElementById('img-base').src = item.base_image;
